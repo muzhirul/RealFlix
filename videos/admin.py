@@ -1,17 +1,15 @@
-from typing import Any
 from django.contrib import admin
-from django.db.models.query import QuerySet
-from django.http.request import HttpRequest
 from .models import Video, VideoPublishedProxy, VideoAllProxy
 
 # Register your models here.
 
 
 class VideoAllProxyAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'state', 'video_id', 'is_published']
+    list_display = ['id', 'title', 'state', 'video_id',
+                    'is_published', 'publish_timestamp']
     list_filter = ['video_id', 'state']
     search_fields = ['title', 'video_id']
-    readonly_fields = ['id', 'is_published']
+    readonly_fields = ['id', 'is_published', 'publish_timestamp']
 
     class Meta:
         model = VideoAllProxy
