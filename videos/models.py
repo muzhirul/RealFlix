@@ -29,7 +29,6 @@ class Video(models.Model):
 
     def save(self, *args, **kwargs):
         if self.state == self.VideoStateOptions.PUSLISH and self.publish_timestamp is None:
-            print('Save as timestap for published')
             self.publish_timestamp = timezone.now()
         elif self.state == self.VideoStateOptions.DRAFT:
             self.publish_timestamp = None
