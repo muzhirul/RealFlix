@@ -1,8 +1,25 @@
 
 from django.utils import timezone
 from django.db import models
+from django.utils.text import slugify
 
 # Create your models here.
+
+
+class VideoQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(
+            state=Video.VideoStateOptions.PUSLISH,
+            publish_timestamp__lte=timezone.now()
+        )
+
+
+class VideoManager(models.Manager):
+    def get_queryset(self):
+        return VideoQuerySet(self.model, using=self._db)
+
+    def published(self):
+        return self.get_queryset().published()
 
 
 class Video(models.Model):
@@ -16,12 +33,16 @@ class Video(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     slug = models.SlugField(blank=True, null=True)
-    video_id = models.CharField(max_length=255)
+    video_id = models.CharField(max_length=255, unique=True)
     active = models.BooleanField(default=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
     state = models.CharField(
         max_length=2, choices=VideoStateOptions.choices, default=VideoStateOptions.DRAFT)
     publish_timestamp = models.DateTimeField(
         auto_now_add=False, auto_now=False, blank=True, null=True)
+
+    objects = VideoManager()
 
     @property
     def is_published(self):
@@ -32,6 +53,8 @@ class Video(models.Model):
             self.publish_timestamp = timezone.now()
         elif self.state == self.VideoStateOptions.DRAFT:
             self.publish_timestamp = None
+        if self.slug is None:
+            self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
 
