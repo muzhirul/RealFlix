@@ -1,3 +1,51 @@
+
+from tkinter import N
+from django.utils import timezone
 from django.db import models
+from django.db.models.signals import pre_save
+from django.utils.text import slugify
+from djangoflix.db.models import PublishStateOptions
+from djangoflix.db.receivers import publish_state_pre_save, slugify_pre_save
+from videos.models import Video
 
 # Create your models here.
+
+
+class PlaylistQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(
+            state=PublishStateOptions.PUSLISH,
+            publish_timestamp__lte=timezone.now()
+        )
+
+
+class PlaylistManager(models.Manager):
+    def get_queryset(self):
+        return PlaylistQuerySet(self.model, using=self._db)
+
+    def published(self):
+        return self.get_queryset().published()
+
+
+class Playlist(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    slug = models.SlugField(blank=True, null=True)
+    video = models.ForeignKey(Video, null=True, on_delete=models.SET_NULL)
+    active = models.BooleanField(default=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    state = models.CharField(
+        max_length=2, choices=PublishStateOptions.choices, default=PublishStateOptions.DRAFT)
+    publish_timestamp = models.DateTimeField(
+        auto_now_add=False, auto_now=False, blank=True, null=True)
+
+    objects = PlaylistManager()
+
+    @property
+    def is_published(self):
+        return self.active
+
+
+pre_save.connect(publish_state_pre_save, sender=Playlist)
+pre_save.connect(slugify_pre_save, sender=Playlist)
