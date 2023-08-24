@@ -3,16 +3,10 @@ from django.utils import timezone
 from django.db import models
 from django.db.models.signals import pre_save
 from django.utils.text import slugify
+from djangoflix.db.models import PublishStateOptions
+from djangoflix.db.receivers import publish_state_pre_save, slugify_pre_save
 
 # Create your models here.
-
-
-class PublishStateOptions(models.TextChoices):
-    # CONSTANT = DB_VALUE, USER_DISPLAY_VALUE
-    PUSLISH = 'PU', 'Publish'
-    DRAFT = 'DR', 'Draft'
-    # UNLISTED = 'UN', 'Unlisted'
-    # PRIVATE = 'PR', 'Private'
 
 
 class VideoQuerySet(models.QuerySet):
@@ -51,13 +45,13 @@ class Video(models.Model):
         return self.active
 
     # def save(self, *args, **kwargs):
-        # if self.state == self.VideoStateOptions.PUSLISH and self.publish_timestamp is None:
-        #     self.publish_timestamp = timezone.now()
-        # elif self.state == self.VideoStateOptions.DRAFT:
-        #     self.publish_timestamp = None
-        # if self.slug is None:
-        #     self.slug = slugify(self.title)
-        # super().save(*args, **kwargs)
+    #     if self.state == PublishStateOptions.PUSLISH and self.publish_timestamp is None:
+    #         self.publish_timestamp = timezone.now()
+    #     elif self.state == PublishStateOptions.DRAFT:
+    #         self.publish_timestamp = None
+    #     if self.slug is None:
+    #         self.slug = slugify(self.title)
+    #     super().save(*args, **kwargs)
 
 
 class VideoAllProxy(Video):
@@ -74,23 +68,5 @@ class VideoPublishedProxy(Video):
         verbose_name_plural = 'Published Videos'
 
 
-def publish_state_pre_save(sender, instance, *args, **kwargs):
-    is_publish = instance.state == PublishStateOptions.PUSLISH
-    is_draft = instance.state == PublishStateOptions.DRAFT
-    if is_publish and instance.publish_timestamp is None:
-        instance.publish_timestamp = timezone.now()
-    elif is_draft:
-        instance.publish_timestamp = None
-
-
 pre_save.connect(publish_state_pre_save, sender=Video)
-
-
-def slugify_pre_save(sender, instance, *args, **kwargs):
-    title = instance.title
-    slug = instance.slug
-    if slug is None:
-        instance.slug = slugify(title)
-
-
 pre_save.connect(slugify_pre_save, sender=Video)

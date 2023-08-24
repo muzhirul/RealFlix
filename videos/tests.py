@@ -2,6 +2,7 @@ from django.test import TestCase
 from .models import Video, PublishStateOptions
 from django.utils import timezone
 from django.utils.text import slugify
+from djangoflix.db.models import PublishStateOptions
 # Create your tests here.
 
 
