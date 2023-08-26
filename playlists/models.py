@@ -1,5 +1,5 @@
 
-from weakref import proxy
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils import timezone
 from django.db import models
 from django.db.models.signals import pre_save
@@ -7,6 +7,8 @@ from django.utils.text import slugify
 from djangoflix.db.models import PublishStateOptions
 from djangoflix.db.receivers import publish_state_pre_save, slugify_pre_save
 from videos.models import Video
+from categories.models import Category
+from tags.models import TaggedItem
 
 # Create your models here.
 
@@ -36,6 +38,8 @@ class Playlist(models.Model):
 
     parent = models.ForeignKey(
         'self', blank=True, null=True, on_delete=models.SET_NULL)
+    category = models.ForeignKey(
+        Category, related_name='playlists', blank=True, null=True, on_delete=models.SET_NULL)
     order = models.IntegerField(default=1)
     title = models.CharField(max_length=255)
     type = models.CharField(
@@ -53,6 +57,7 @@ class Playlist(models.Model):
         max_length=2, choices=PublishStateOptions.choices, default=PublishStateOptions.DRAFT)
     publish_timestamp = models.DateTimeField(
         auto_now_add=False, auto_now=False, blank=True, null=True)
+    tags = GenericRelation(TaggedItem, related_query_name='playlist')
 
     objects = PlaylistManager()
 
