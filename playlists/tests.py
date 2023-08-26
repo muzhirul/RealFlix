@@ -1,6 +1,6 @@
-from turtle import title
+
 from django.test import TestCase
-from .models import Playlist, PublishStateOptions
+from .models import Playlist
 from django.utils import timezone
 from django.utils.text import slugify
 from djangoflix.db.models import PublishStateOptions
@@ -9,16 +9,32 @@ from videos.models import Video
 
 
 class PlaylistModelTestCase(TestCase):
-    def setUp(self):
+    def create_videos(self):
         video_a = Video.objects.create(title='My title', video_id='abc123')
+        video_b = Video.objects.create(title='My title', video_id='abc124')
+        video_c = Video.objects.create(title='My title', video_id='abc125')
         self.video_a = video_a
+        self.video_b = video_b
+        self.video_c = video_c
+
+    def setUp(self):
+        self.create_videos()
         self.obj_a = Playlist.objects.create(
-            title='This is my title', video=video_a)
-        self.obj_b = Playlist.objects.create(
-            title='This is my title', state=PublishStateOptions.PUSLISH, video=video_a)
+            title='This is my title', video=self.video_a)
+        obj_b = Playlist.objects.create(
+            title='This is my title', state=PublishStateOptions.PUSLISH, video=self.video_a)
+        obj_b.videos.set([self.video_a, self.video_b, self.video_c])
+        obj_b.save()
+        self.obj_b = obj_b
 
     def test_playlist_video(self):
         self.assertEqual(self.obj_a.video, self.video_a)
+
+    def test_video_playlist_ids_property(self):
+        ids = self.obj_a.video.get_playlist_ids()
+        acutal_ids = list(Playlist.objects.filter(
+            video=self.video_a).values_list('id', flat=True))
+        self.assertEqual(ids, acutal_ids)
 
     def test_video_playlist(self):
         qs = self.video_a.playlist_set.all()
